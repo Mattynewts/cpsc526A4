@@ -17,61 +17,86 @@ import os
 #import base64
 import hashlib
 import shlex
+import time
+from array import *
 
+#global nonce 
+seen_nonces = list()
 
 def parse_args():
     parser = argparse.ArgumentParser(
         prog='client',
         description='client connects to server')
-    parser.add_argument('hostname', help='hostname of the server')
-    parser.add_argument('port', type=int, help='port where server listens')
+    parser.add_argument('hostname_port', help='hostname and port of the server')
+    #parser.add_argument('port', type=int, help='port where server listens')
     parser.add_argument('nickname', help='bot nickname')
     parser.add_argument('secret', help='bot secret')
     #parser.add_argument('-d', '--debug', action='store_true',
     #                    help="enable debugging output")
     return parser.parse_args()
 
-def client_program(args: str):
-    host = '127.0.0.1'
-    port = 5005
+def client_program(args: str, sock: socket):
 
-    print("hostname: ", args.hostname)
-    print("port: ", args.port)
-    print("nickname: ", args.nickname)
-    print("secret: ", args.secret)
+    split_hostPort = args.hostname_port.split(":")
+    host = split_hostPort[0]
+    port = int(split_hostPort[1])
 
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((args.hostname, args.port))
+    #print("args: ", args)
 
-    message = input('->')
-    while (message.lower().strip() != 'close'):
-        client_socket.send(message.encode())
-        data = client_socket.recv(1024).decode()
-        print(f'Response from server {data}')
+    #sends initial join message to server 
+    sendNickname = "-joined " + args.nickname
 
-        message = input('->')
-    client_socket.send(message.encode)
-    client_socket.close()
+    # need to implent bad command format sent
+    try:
+        sock.send(sendNickname.encode())
+        print("connected to server will wait for something: ")
+        command = sock.recv(1024).decode()
+        print("Recieved from server: ", command)
+
+        cmd_data = command.split()
+
+        #authenticate the command:
+        if cmd_data[0] in seen_nonces:
+            #ignore command
+            print("nonce seen")
+        else:
+            mac2 = str(hashlib.sha256((cmd_data[0] + args.secret).encode('utf-8')).hexdigest())
+            mac2_short = mac2[0:8]
+            print("mac2: ", mac2_short)
+            if mac2_short != str(cmd_data[1]):
+                #ignore comand
+                print("macs do not match")
+            else:
+                seen_nonces.append(cmd_data[0])
+                #execute command
+                print("command authenticated")
+        
+        #client_socket.send(message.encode)
+        #client_socket.close()
+    except:
+        print("Disconnected.")
+        #continue
 
 
 def main():
     args = parse_args()
-    #dbg.enabled = args.debug
-    #secret = get_secret()
-    print(f"connecting to {args.hostname}:{args.port} with {args.secret}")
-    #sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #sock.connect((args.hostname, args.port))
-    #dbg(f"connected")
-    #lsock = LineSocket(sock)
-    try:
-        client_program(args)
-        while True:
-            print("wow")
-            #cmd = input(">").strip()
-            #handle_command(lsock, cmd)
+    while(1):
+        try:
+            #initially connect to server
+            split_hostPort = args.hostname_port.split(":")
+            host = split_hostPort[0]
+            port = int(split_hostPort[1])
 
-    except ConnectionError:
-        print("Connection failed. Is the server dead?")
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client_socket.connect((host, port))
+
+            print("Connected.")
+            client_program(args, client_socket)
+
+        except ConnectionError:
+            #print("Connection failed. Is the server dead?")
+            print("Failed to connect.")
+            time.sleep(5)
 
 
 if __name__ == '__main__':
