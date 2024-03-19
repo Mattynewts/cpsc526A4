@@ -20,8 +20,9 @@ import shlex
 import time
 from array import *
 
-#global nonce 
+#globals
 seen_nonces = list()
+commands_exe = 0    #maybe change so its not global
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -35,6 +36,23 @@ def parse_args():
     #                    help="enable debugging output")
     return parser.parse_args()
 
+def status_cmd(sock: socket, nick: str):
+    global commands_exe
+    status_send = "-status " + nick + " " + str(commands_exe) + "\n"
+    sock.send(status_send.encode())
+    commands_exe += 1
+    #implement status command
+
+
+def shutdown_cmd(sock: socket, nick: str):
+    shutdown_send = "-shutdown " + nick  + "\n"
+    sock.send(shutdown_send.encode())
+    #sock.flush()
+    sock.close()
+    print("I have shutdown")
+    exit(1)
+
+
 def client_program(args: str, sock: socket):
 
     split_hostPort = args.hostname_port.split(":")
@@ -47,34 +65,42 @@ def client_program(args: str, sock: socket):
     sendNickname = "-joined " + args.nickname
 
     # need to implent bad command format sent
-    try:
-        sock.send(sendNickname.encode())
-        print("connected to server will wait for something: ")
-        command = sock.recv(1024).decode()
-        print("Recieved from server: ", command)
+    #try:
+    sock.send(sendNickname.encode())
+    print("connected to server will wait for something: ")
+    command = sock.recv(1024).decode()
+    print("Recieved from server: ", command)
 
-        cmd_data = command.split()
-
-        #authenticate the command:
-        if cmd_data[0] in seen_nonces:
-            #ignore command
-            print("nonce seen")
+    cmd_data = command.split()
+    global commands_exe 
+    #authenticate the command:
+    if cmd_data[0] in seen_nonces:
+        #ignore command
+        print("nonce seen")
+    else:
+        mac2 = str(hashlib.sha256((cmd_data[0] + args.secret).encode('utf-8')).hexdigest())
+        mac2_short = mac2[0:8]
+        print("mac2: ", mac2_short)
+        if mac2_short != str(cmd_data[1]):
+            #ignore comand
+            print("macs do not match")
         else:
-            mac2 = str(hashlib.sha256((cmd_data[0] + args.secret).encode('utf-8')).hexdigest())
-            mac2_short = mac2[0:8]
-            print("mac2: ", mac2_short)
-            if mac2_short != str(cmd_data[1]):
-                #ignore comand
-                print("macs do not match")
-            else:
-                seen_nonces.append(cmd_data[0])
-                #execute command
-                print("command authenticated")
+            seen_nonces.append(cmd_data[0])
+            #execute command
+            if cmd_data[2] == "status":
+                status_cmd(sock, args.nickname)
+                #commands_exe += 1
+            elif cmd_data[2] == "shutdown":
+                print("telling bot to shutdown")
+                shutdown_cmd(sock, args.nickname)
+                #implement shutdown bot
+                commands_exe += 1
+            print("command authenticated")
         
         #client_socket.send(message.encode)
         #client_socket.close()
-    except:
-        print("Disconnected.")
+    #except:
+       #print("Disconnected.")
         #continue
 
 
