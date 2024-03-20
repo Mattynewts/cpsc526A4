@@ -62,14 +62,14 @@ def client_program(args: str, sock: socket):
     #print("args: ", args)
 
     #sends initial join message to server 
-    sendNickname = "-joined " + args.nickname
+    #sendNickname = "-joined " + args.nickname
 
     # need to implent bad command format sent
     #try:
-    sock.send(sendNickname.encode())
-    print("connected to server will wait for something: ")
+    #sock.send(sendNickname.encode())
+    #print("connected to server will wait for something: ")
     command = sock.recv(1024).decode()
-    print("Recieved from server: ", command)
+    #print("Recieved from server: ", command)
 
     cmd_data = command.split()
     global commands_exe 
@@ -80,11 +80,10 @@ def client_program(args: str, sock: socket):
     else:
         mac2 = str(hashlib.sha256((cmd_data[0] + args.secret).encode('utf-8')).hexdigest())
         mac2_short = mac2[0:8]
-        print("mac2: ", mac2_short)
-        if mac2_short != str(cmd_data[1]):
+        #print("mac2: ", mac2_short)
+        if mac2_short == str(cmd_data[1]):
             #ignore comand
-            print("macs do not match")
-        else:
+            #print("macs do not match")
             seen_nonces.append(cmd_data[0])
             #execute command
             if cmd_data[2] == "status":
@@ -95,7 +94,9 @@ def client_program(args: str, sock: socket):
                 shutdown_cmd(sock, args.nickname)
                 #implement shutdown bot
                 commands_exe += 1
-            print("command authenticated")
+            #print("command authenticated")
+        #else we ignore comand
+            #print("macs do not match")
         
         #client_socket.send(message.encode)
         #client_socket.close()
@@ -115,14 +116,26 @@ def main():
 
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((host, port))
+             #sends initial join message to server 
+            sendNickname = "-joined " + args.nickname
+
+            client_socket.send(sendNickname.encode())
 
             print("Connected.")
-            client_program(args, client_socket)
 
         except ConnectionError:
             #print("Connection failed. Is the server dead?")
             print("Failed to connect.")
             time.sleep(5)
+        
+        while(1):
+            try:
+                client_program(args, client_socket)
+
+            except ConnectionError:
+                print("lost connection.")
+
+
 
 
 if __name__ == '__main__':
