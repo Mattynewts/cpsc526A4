@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # ./ncbot.py <hostname>:<port> <nick> <secret>
 
-# example: 
+# example:
 # ./ncbot csx1:12345 bot1 green
 
 # to start ncat broker:
@@ -21,7 +22,7 @@ import time
 from array import *
 from typing import Union
 
-#global nonce 
+#global nonce
 seen_nonces = list()
 commands_exe = 0    #maybe change so its not global
 
@@ -56,7 +57,7 @@ def shutdown_cmd(sock: socket, nick: str):
 
 
 
-def attack_server(hostname: Union[str, int], port:int, nickname:str, nonce: str):
+def attack_server(hostname: str, port:int, nickname:str, nonce: str):
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect((hostname, port))
@@ -66,11 +67,30 @@ def attack_server(hostname: Union[str, int], port:int, nickname:str, nonce: str)
         except :
             print("-attack ", nickname, " FAIL Could not send attack")
 
-    except (ConnectionAbortedError, ConnectionRefusedError, ConnectionResetError) as error:
+    except Exception as error:
         print("-attack ", nickname, " FAIL ", error)
         return
 
+    client_socket.close()
+    print("-attack ", nickname , " OK")
     return
+
+def move_server(host:str, port:int, nick:str):
+        try:
+            #initially connect to server
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client_socket.connect((host, port))
+             #sends initial join message to server
+            sendNickname = "-joined " + nick
+
+            client_socket.send(sendNickname.encode())
+
+            print("Connected.")
+
+        except ConnectionError:
+            #print("Connection failed. Is the server dead?")
+            print("Failed to connect.")
+            time.sleep(5)
 
 def client_program(args: str, sock: socket):
 
@@ -80,7 +100,7 @@ def client_program(args: str, sock: socket):
 
     #print("args: ", args)
 
-    #sends initial join message to server 
+    #sends initial join message to server
     #sendNickname = "-joined " + args.nickname
 
     # need to implent bad command format sent
@@ -91,7 +111,7 @@ def client_program(args: str, sock: socket):
     #print("Recieved from server: ", command)
 
     cmd_data = command.split()
-    global commands_exe 
+    global commands_exe
     #authenticate the command:
     if cmd_data[0] in seen_nonces:
         #ignore command
@@ -116,12 +136,16 @@ def client_program(args: str, sock: socket):
             elif cmd_data[2] == "attack":
                     split_attack = cmd_data[3].split(":")
                     attack_server(split_attack[0], int(split_attack[1]), args.nickname, cmd_data[0])
-                    print("-attack ", args.nickname , " OK")
+            elif cmd_data[2] == "move":
+                    print("-move ", args.nickname)
+                    split_move = cmd_data[3].split(":")
+                    sock.close()
+                    move_server(split_move[0], int(split_move[1]), args.nickname)
             #print("command authenticated")
         #else we ignore comand
             #print("macs do not match")
 
-        
+
         #client_socket.send(message.encode)
         #client_socket.close()
     #except:
@@ -140,7 +164,7 @@ def main():
 
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((host, port))
-             #sends initial join message to server 
+             #sends initial join message to server
             sendNickname = "-joined " + args.nickname
 
             client_socket.send(sendNickname.encode())
@@ -151,7 +175,7 @@ def main():
             #print("Connection failed. Is the server dead?")
             print("Failed to connect.")
             time.sleep(5)
-        
+
         while(1):
             try:
                 client_program(args, client_socket)
