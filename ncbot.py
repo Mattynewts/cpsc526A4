@@ -75,13 +75,14 @@ def attack_server(hostname: str, port:int, nickname:str, nonce: str):
     print("-attack ", nickname , " OK")
     return
 
-def move_server(host:str, port:int, nick:str):
+def move_server(host:str, port:int, args:str):
+ while(1):
         try:
             #initially connect to server
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((host, port))
              #sends initial join message to server
-            sendNickname = "-joined " + nick
+            sendNickname = "-joined " + args.nickname
 
             client_socket.send(sendNickname.encode())
 
@@ -91,6 +92,13 @@ def move_server(host:str, port:int, nick:str):
             #print("Connection failed. Is the server dead?")
             print("Failed to connect.")
             time.sleep(5)
+
+        while(1):
+            try:
+                client_program(args, client_socket)
+
+            except ConnectionError:
+                print("lost connection.")
 
 def client_program(args: str, sock: socket):
 
@@ -140,7 +148,7 @@ def client_program(args: str, sock: socket):
                     print("-move ", args.nickname)
                     split_move = cmd_data[3].split(":")
                     sock.close()
-                    move_server(split_move[0], int(split_move[1]), args.nickname)
+                    move_server(split_move[0], int(split_move[1]), args)
             #print("command authenticated")
         #else we ignore comand
             #print("macs do not match")
