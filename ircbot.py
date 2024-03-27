@@ -36,9 +36,9 @@ def parse_args():
 
 def parse_message(data: str):
 
-    #print("parsing: \n", data)
+    print("parsing: \n", data)
     split = data.split()
-    #print(split)
+    print(split)
 
     prefix = ''
     trailing = []
@@ -168,6 +168,9 @@ def client_program(args: str, sock: socket, bot_nickname: str):
 
 
     data = sock.recv(1024).decode()  #receive the text
+    if(data[:4] == ":bot"):
+        #ignore anything sent from other bots
+        return
     checkJoin_Quit = data.split()
     if(checkJoin_Quit[1] == "JOIN" or checkJoin_Quit[1] == "QUIT"):
         return
@@ -177,11 +180,11 @@ def client_program(args: str, sock: socket, bot_nickname: str):
     prefix, command, messageContents = parse_message(data)
 
     parsed_command = messageContents.pop(1)
-    trim_parsed_command = parsed_command[0:-2]
-    #print(trim_parsed_command)
+    trim_parsed_command = parsed_command[0:-4]
+    print(trim_parsed_command)
 
     cmd_data = trim_parsed_command.split()
-    #print("cmd_data: ", cmd_data)
+    print("cmd_data: ", cmd_data)
 
     # checks if a valid command is sent
     if(len(cmd_data) == 1):
@@ -201,6 +204,7 @@ def client_program(args: str, sock: socket, bot_nickname: str):
             seen_nonces.append(cmd_data[0])
             #execute command
             if cmd_data[2] == "status":                 # gives bot status
+                print("status")
                 status_cmd(sock, bot_nickname, channel)
             elif cmd_data[2] == "shutdown":             # shutdown bots               
                 print("telling bot to shutdown")
