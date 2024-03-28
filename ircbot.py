@@ -67,7 +67,7 @@ def status_cmd(sock: socket, nick: str, channel: str):
 
 
 def shutdown_cmd(sock: socket, nick: str, channel: str):
-    shutdown_send = 'PRIVMSG ' + channel + ' :' + nick + '! \r\n'
+    shutdown_send = 'PRIVMSG ' + channel + ' :' + 'shutdown ' + nick + '! \r\n'
     sock.send(shutdown_send.encode())
     #sock.flush()
     sock.close()
@@ -168,6 +168,12 @@ def client_program(args: str, sock: socket, bot_nickname: str):
 
 
     data = sock.recv(1024).decode()  #receive the text
+    if(data.find('PING') != -1):                          #check if 'PING' is found
+        print("PINGED")
+        sendPONG = 'PONG ' + data.split() [1] + '\r\n'
+        sock.send(sendPONG.encode())
+        return 
+                
     if(data[:4] == ":bot"):
         #ignore anything sent from other bots
         return
@@ -270,8 +276,8 @@ def main():
                 try:
                     client_program(args, client_socket, nickname)
 
-                    if text.find('PING') != -1:                          #check if 'PING' is found
-                        client_socket.send('PONG ' + text.split() [1] + '\r\n') #returnes 'PONG' back to the server (prevents pinging out!)
+                    #if(text.find('PING') != -1):                          #check if 'PING' is found
+                    #    client_socket.send('PONG ' + text.split() [1] + '\r\n') #returnes 'PONG' back to the server (prevents pinging out!)
                 
                 except ConnectionError:
                     print("lost connection.")
