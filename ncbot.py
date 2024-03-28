@@ -57,34 +57,45 @@ def shutdown_cmd(sock: socket, nick: str):
 
 
 
-def attack_server(hostname: str, port:int, nickname:str, nonce: str):
+def attack_server(sock: socket, hostname: str, port: int, nickname: str, nonce: str):
+    #client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #client_socket.connect((hostname, port))
+    #attack_send = nickname + nonce
     try:
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((hostname, port))
+        attack_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        attack_socket.connect((hostname, port))
         attack_send = nickname + nonce
+        attack_socket.send(attack_send.encode())
         try:
-            client_socket.send(attack_send.encode())
-        except :
-            print("-attack ", nickname, " FAIL Could not send attack")
+            attack_socket.send(attack_send.encode())
+        except:
+            failNoSend = "-attack " + nickname + " FAIL Could not send attack"
+            sock.send(failNoSend.encode())
+            print(failNoSend)
+            return
 
     except Exception as error:
-        print("-attack ", nickname, " FAIL ", error)
+        failError = "-attack " + nickname + " FAIL " + str(error)
+        sock.send(failError.encode())
+        print(failError)
         return
 
-    client_socket.close()
-    print("-attack ", nickname , " OK")
+    attack_socket.close()
+    attackOK = "-attack " + nickname + " OK"
+    sock.send(attackOK.encode())
+    print(attackOK)
     return
 
 def move_server(host:str, port:int, args:str):
  while(1):
         try:
             #initially connect to server
-            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client_socket.connect((host, port))
+            new_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            new_client_socket.connect((host, port))
              #sends initial join message to server
             sendNickname = "-joined " + args.nickname
 
-            client_socket.send(sendNickname.encode())
+            new_client_socket.send(sendNickname.encode())
 
             print("Connected.")
 
@@ -95,7 +106,7 @@ def move_server(host:str, port:int, args:str):
 
         while(1):
             try:
-                client_program(args, client_socket)
+                client_program(args, new_client_socket)
 
             except ConnectionError:
                 print("lost connection.")
@@ -106,15 +117,7 @@ def client_program(args: str, sock: socket):
     host = split_hostPort[0]
     port = int(split_hostPort[1])
 
-    #print("args: ", args)
 
-    #sends initial join message to server
-    #sendNickname = "-joined " + args.nickname
-
-    # need to implent bad command format sent
-    #try:
-    #sock.send(sendNickname.encode())
-    #print("connected to server will wait for something: ")
     command = sock.recv(1024).decode()
     #print("Recieved from server: ", command)
 
@@ -140,15 +143,20 @@ def client_program(args: str, sock: socket):
                 print("telling bot to shutdown")
                 shutdown_cmd(sock, args.nickname)
                 #implement shutdown bot
-                commands_exe += 1
+                #commands_exe += 1
             elif cmd_data[2] == "attack":
-                    split_attack = cmd_data[3].split(":")
-                    attack_server(split_attack[0], int(split_attack[1]), args.nickname, cmd_data[0])
+                split_attack = cmd_data[3].split(":")
+                print(int(split_attack[1]))
+                attack_server(sock, split_attack[0], int(split_attack[1]), args.nickname, cmd_data[0])
+                commands_exe += 1
             elif cmd_data[2] == "move":
-                    print("-move ", args.nickname)
-                    split_move = cmd_data[3].split(":")
-                    sock.close()
-                    move_server(split_move[0], int(split_move[1]), args)
+                moveBot = "-move " + args.nickname
+                print(moveBot)
+                sock.send(moveBot.encode())
+                split_move = cmd_data[3].split(":")
+                sock.close()
+                move_server(split_move[0], int(split_move[1]), args)
+                commands_exe += 1
             #print("command authenticated")
         #else we ignore comand
             #print("macs do not match")
@@ -178,18 +186,17 @@ def main():
             client_socket.send(sendNickname.encode())
 
             print("Connected.")
+            while(1):
+                try:
+                    client_program(args, client_socket)
+
+                except ConnectionError:
+                    print("lost connection.")
 
         except ConnectionError:
             #print("Connection failed. Is the server dead?")
             print("Failed to connect.")
             time.sleep(5)
-
-        while(1):
-            try:
-                client_program(args, client_socket)
-
-            except ConnectionError:
-                print("lost connection.")
 
 
 
