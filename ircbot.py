@@ -216,13 +216,7 @@ def client_program(args: str, sock: socket, bot_nickname: str):
         print("lost connection.")
         main()
     
-
-    # checks if a valid command is sent
-
-    
     global commands_exe
-
-    
     # Authenticate the command:
     if cmd_data[0] in seen_nonces:
         #ignore command
