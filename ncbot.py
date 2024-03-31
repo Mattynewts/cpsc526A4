@@ -8,9 +8,6 @@
 # nc --broker -l 12345
 
 #implements the ncbot to connect to a Ncat broker server.
-
-
-
 import argparse
 import socket
 import sys
@@ -107,7 +104,8 @@ def move_server(host:str, port:int, args:str):
             # Failed to move to new server
             print("Failed to connect.")
             time.sleep(5)
-
+        # Increase command count            
+        commands_exe += 1
         # If successful connection, run the bot on the new server
         while(1):
             try:
@@ -116,8 +114,7 @@ def move_server(host:str, port:int, args:str):
             # Lost connection to the server
             except ConnectionError:
                 print("lost connection.")
-    # Increase command count            
-    commands_exe += 1
+    
 def client_program(args: str, sock: socket):
     # Split the host and port into separate variables (Ex : csx1:2025)
     split_hostPort = args.hostname_port.split(":")
@@ -188,7 +185,6 @@ def main():
             print("Connected.")
 
         except ConnectionError:
-            #print("Connection failed. Is the server dead?")
             print("Failed to connect.")
             time.sleep(5)
 

