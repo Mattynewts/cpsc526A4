@@ -146,24 +146,24 @@ def move_server(host: str, port: int, args: str):
             print(text)   #print text to console
             print("connected")
 
+            # If successful connection, run the bot on the new server
+            while(1):
+                try:
+                    client_program(args, new_client_socket, nickname)
+
+                    if text.find('PING') != -1:                          #check if 'PING' is found
+                        new_client_socket.send('PONG ' + text.split() [1] + '\r\n') #returnes 'PONG' back to the server (prevents pinging out!)
+
+                # Lost connection to server 
+                except ConnectionError:
+                    print("lost connection.")
+                    exit(1)
+
         # Failed to move to new server
         except ConnectionError:
             #print("Connection failed. Is the server dead?")
             print("Failed to connect.")
             time.sleep(5)
-
-        # If successful connection, run the bot on the new server
-        while(1):
-            try:
-                client_program(args, new_client_socket, nickname)
-
-                if text.find('PING') != -1:                          #check if 'PING' is found
-                    new_client_socket.send('PONG ' + text.split() [1] + '\r\n') #returnes 'PONG' back to the server (prevents pinging out!)
-
-            # Lost connection to server 
-            except ConnectionError:
-                print("lost connection.")
-                exit(1)
 
 
 def client_program(args: str, sock: socket, bot_nickname: str):
@@ -210,7 +210,8 @@ def client_program(args: str, sock: socket, bot_nickname: str):
         print("cmd_data: ", cmd_data)
 
     if(len(cmd_data) == 1 or len(cmd_data) == 0):
-        return
+        print("lost connection.")
+        main()
 
     # checks if a valid command is sent
 
@@ -293,16 +294,15 @@ def main():
             print(text)   #print text to console
 
             print("connected")
+
+            while(1):
+                try:
+                    client_program(args, client_socket, nickname)
+                except ConnectionError:
+                    print("lost connection.")
         except ConnectionError:
-            print("Failed to connect.")
-            time.sleep(5)
-
-        while(1):
-            try:
-                client_program(args, client_socket, nickname)
-
-            except ConnectionError:
-                print("lost connection.")
+        print("Failed to connect.")
+        time.sleep(5)
 
 
 
