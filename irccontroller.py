@@ -106,110 +106,6 @@ def recieve_status_data(sock: socket, channel: str):
     for bot in find_bot:
         print(bot)
 
-# Receive shutdown data from all bots, parsed so every bot's output is received
-def recieve_shutdown_data(sock: socket):
-    i = 0
-    j = 0
-    bot_status = list()
-    parse_irc_data = []
-    find_bot = list()    
-    while i < 5:
-        read_data = [sock]
-        write_data = []
-        error_data = []
-        readList, writeList, errorList = select.select(read_data, write_data, error_data, 0.1)
-        if readList:
-
-            # There is a bug when the data is recieved at the same time ..... -----------------
-            response = sock.recv(1024).decode()
-            bot_status.append(response)
-            j = j + 1       #counts number of bots which sent data back
-
-        else:
-            # Waits for 5 seconds
-            i = i + 1
-            
-    for i in find_bot:
-        if(i == ""):
-            find_bot.remove("")
-
-        elif(i == "\r\n"):
-            find_bot.remove(i)
-            
-    print("Result: ", len(find_bot), " bots shutdown.")
-    status_string = ""
-    for bot in find_bot:
-        print(bot)
-
-# Receive attack data from all bots, parsed so every bot's output is received
-def recieve_attack_data(sock: socket):
-    i = 0
-    j = 0
-    bot_attack = list()
-    parse_irc_data = []
-    find_bot = list()    
-    while i < 5:
-        read_data = [sock]
-        write_data = []
-        error_data = []
-        readList, writeList, errorList = select.select(read_data, write_data, error_data, 0.1)
-        if readList:
-
-            # There is a bug when the data is recieved at the same time ..... -----------------
-            response = sock.recv(1024).decode()
-            bot_attack.append(response)
-            j = j + 1       #counts number of bots which sent data back
-
-        else:
-            # Waits for 5 seconds
-            i = i + 1
-            
-    for i in find_bot:
-        if(i == ""):
-            find_bot.remove("")
-
-        elif(i == "\r\n"):
-            find_bot.remove(i)
-            
-    print("Result: ", len(find_bot), " bots discovered.")
-    status_string = ""
-    for bot in find_bot:
-        print(bot)
-
-# Receive move data from all bots, parsed so every bot's output is received
-def recieve_move_data(sock: socket):
-    i = 0
-    j = 0
-    bot_move = list()
-    parse_irc_data = []
-    find_bot = list()    
-    while i < 5:
-        read_data = [sock]
-        write_data = []
-        error_data = []
-        readList, writeList, errorList = select.select(read_data, write_data, error_data, 0.1)
-        if readList:
-
-            # There is a bug when the data is recieved at the same time ..... -----------------
-            response = sock.recv(1024).decode()
-            bot_move.append(response)
-            j = j + 1       #counts number of bots which sent data back
-
-        else:
-            # Waits for 5 seconds
-            i = i + 1
-            
-    for i in find_bot:
-        if(i == ""):
-            find_bot.remove("")
-        elif(i == "\r\n"):
-
-            find_bot.remove(i)
-            
-    print("Result: ", len(find_bot), " bots discovered.")
-    status_string = ""
-    for bot in find_bot:
-        print(bot)
 
 # Main bot controller
 def bot_controller(args: str, sock: socket):
@@ -261,7 +157,6 @@ def bot_controller(args: str, sock: socket):
             sock.send(nonce_mac_cmd.encode())
 
             recieve_status_data(sock, channel)
-            recieve_shutdown_data(sock)
 
         # Sending attack command to bot
         elif command[0:6] == "attack":
@@ -275,7 +170,6 @@ def bot_controller(args: str, sock: socket):
 
             # Receive the bot reply
             recieve_status_data(sock, channel)
-            recieve_attack_data(sock)
 
         # Sending move command to bot
         elif command[0:4] == "move":
@@ -289,7 +183,6 @@ def bot_controller(args: str, sock: socket):
 
             # Receive the bot reply
             recieve_status_data(sock, channel)
-            recieve_move_data(sock)
 
         # Command to close controller
         elif command == "quit":
