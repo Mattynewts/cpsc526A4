@@ -17,8 +17,6 @@ import random
 import string
 import select
 
-
-
 #global nonce
 seen_nonces = list()
 
@@ -174,7 +172,6 @@ def client_program(args: str, sock: socket, bot_nickname: str):
     channel = "#" + args.channel
     secret = args.secret
 
-
     data = sock.recv(1024).decode()  #receive the text
     if(data.find('PING') != -1):                          #check if 'PING' is found
         print("PINGED")
@@ -185,20 +182,12 @@ def client_program(args: str, sock: socket, bot_nickname: str):
     # Ignore anything sent from other bots     
     if(data[:4] == ":bot"):
         return
-    
-    # Check for bot join or quit
-    checkJoin_Quit = data.split()
-    #print("split DATA: ", checkJoin_Quit)
 
-    if(data.find('JOIN') != -1 or data.find('QUIT') != -1):  #checkJoin_Quit[1] == "JOIN" or checkJoin_Quit[1] == "QUIT"):
+    if(data.find('JOIN') != -1 or data.find('QUIT') != -1):
         return
 
-    # parsed out command (examle: 1 497404d2 status)
-
-    #print("THIS DATA: ", data)
-
+    #splits recieved data
     cmd_data = data.split()
-
     if(data.find('PRIVMSG') != -1):
         prefix, command, messageContents = parse_message(data)
         parsed_command = messageContents.pop(1)
@@ -208,10 +197,9 @@ def client_program(args: str, sock: socket, bot_nickname: str):
         cmd_data = trim_parsed_command.split()
         #print("cmd_data: ", cmd_data)
 
-    
+    #checks if server disconncected or if we recieved bad inputs
     if(data == '\n' or len(cmd_data) == 1):
         return
-
     if(len(cmd_data) == 0):
         print("lost connection.")
         main()
