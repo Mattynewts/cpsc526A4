@@ -35,6 +35,7 @@ def parse_args():
     return parser.parse_args()
 
 # Message Parsing
+# Method modified from code found at https://stackoverflow.com/questions/930700/python-parsing-irc-messages -----
 def parse_message(data: str):
 
     #print("parsing: \n", data)
