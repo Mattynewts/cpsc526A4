@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # ./ircbot.py <hostname>:<port> <channel> <secret>
-
 # irc server is on csx1.ucalgary.ca:60000.
 
 
